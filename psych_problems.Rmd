@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(ggtext)
+```
+
+Simulate data
+
+From `https://calmcode.io/labs/drawdata.html`
+
+```{r}
+df_sim <- read_csv("sim_data/sim_psych_problems.csv")
+```
+
+Colors
+
+```{r}
+colors <- c("#0a9396", "#9b2226", "#ee9b00")
+```
+
+Labels 
+
+```{r}
+label_cogn <- "<span style='color: #0a9396;'>**Cognitive**</span> problems with<br>attention, memory, intelligence<br>are often encountered before age 8"
+label_emot <- "<span style='color: #9b2226;'>**Emotional**</span> internalizing and<br>externalizing problems<br>become prevalent at ages 9"
+label_behv <- "<span style='color: #ee9b00;'>**Risky behaviour**</span><br>picks up after age 13"
+
+label_early  <- "<span style='color: #a5a5a5;'>**Early**<br>**childhood**</span>"
+label_middle <- "<span style='color: #a5a5a5;'>**Middle**<br>**childhood**</span>"
+label_late   <- "<span style='color: #a5a5a5;'>**Late**<br>**childhood**</span>"
+```
+
+Plot
+
+```{r fig.height=5, fig.width=8}
+df_sim %>% 
+  mutate(y = ifelse(z == "a", y + 30, y)) %>% 
+  
+  ggplot(aes(x = x, y = y, color = z, fill = z)) +
+  # Filled in areas
+  geom_ribbon(data = df_sim[df_sim$z == 'a',],
+              aes(ymin = 0, ymax = predict(loess(y + 30 ~ x)),
+                  fill = "a"), colour = F, alpha = 1/5) +
+  geom_ribbon(data = df_sim[df_sim$z == 'b',],
+              aes(ymin = 0, ymax = predict(loess(y ~ x)),
+                  fill = "b"), colour = F, alpha = 1/3.5) +
+  geom_ribbon(data = df_sim[df_sim$z == 'c',],
+              aes(ymin = 0, ymax = predict(loess(y ~ x)),
+                  fill = "c"), colour = F, alpha = 1/2) +
+  # Labels age problems
+  annotate(geom = "richtext", x= 136, y = 260, label = label_cogn,
+           fill = NA, label.color = NA, size = 3.2) +
+  annotate(geom = "richtext", x= 340, y = 260, label = label_emot,
+           fill = NA, label.color = NA, size = 3.2) +
+  annotate(geom = "richtext", x= 476, y = 265, label = label_behv,
+           fill = NA, label.color = NA, size = 3.2) +
+  # Labels age periods
+  annotate(geom = "richtext", x= 136, y = 310, label = label_early,
+           fill = NA, label.color = NA, size = 4.5) +
+  annotate(geom = "richtext", x= 340, y = 310, label = label_middle,
+           fill = NA, label.color = NA, size = 4.5) +
+  annotate(geom = "richtext", x= 476, y = 310, label = label_late,
+           fill = NA, label.color = NA, size = 4.5) +
+  # lines
+  geom_vline(xintercept = 272, size = 1, linetype = 2, color = "grey", alpha = .8) +
+  geom_vline(xintercept = 408, size = 1, linetype = 2, color = "grey", alpha = .8) +
+  scale_x_continuous(breaks = seq(0, 600, by = 34),
+                     labels = as.character(0:17),
+                     limits = c(20, 560), expand = c(0, 0)) +
+  # Scales
+  scale_y_continuous(limits = c(0, 350), expand = c(0, 0)) +
+  scale_color_manual(values = colors) +
+  scale_fill_manual(values = colors) +
+  # Theme
+  labs(x = "Age", y = "Prevalence of psychological problems") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.line   = element_line(color = "#ced4da"),
+        axis.text   = element_text(color = "#6c757d"),
+        axis.title  = element_text(color = "#6c757d"),
+        axis.text.y = element_blank(),
+        axis.ticks  = element_blank(), 
+        panel.grid  = element_blank())
+```
+
+```{r}
+ggsave("plots/psych_problems.png", bg = "white", height=5, width=8)
+```
